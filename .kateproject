@@ -1,0 +1,8 @@
+{
+    "name": "Checkers",
+    "files": [{
+        "directory": ".",
+        "git": 1,
+        "recursive": 1
+    }]
+}
