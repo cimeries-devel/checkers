@@ -21,7 +21,6 @@ pygame.display.set_caption("Juego de Damas con IA")
 # Cargar imágenes
 CROWN = pygame.transform.scale(pygame.image.load("crown.png"), (44, 25))
 
-
 class Piece:
     PADDING = 15
     OUTLINE = 2
@@ -53,7 +52,6 @@ class Piece:
         self.row = row
         self.col = col
         self.calc_pos()
-
 
 class Board:
     def __init__(self):
@@ -93,9 +91,11 @@ class Board:
                     piece.draw(win)
 
     def move(self, piece, row, col):
+        # Mover la pieza a la nueva posición
         self.board[piece.row][piece.col], self.board[row][col] = self.board[row][col], self.board[piece.row][piece.col]
         piece.move(row, col)
 
+        # Promocionar a dama si llega al borde opuesto
         if (row == 0 and piece.color == RED) or (row == ROWS - 1 and piece.color == WHITE):
             piece.make_king()
 
@@ -108,8 +108,19 @@ class Board:
                 self.red_left -= 1
 
     def evaluate(self):
+        # Función de evaluación que da más valor a las damas y piezas avanzadas
         white_score = self.white_left + self.white_kings * 1.5
         red_score = self.red_left + self.red_kings * 1.5
+
+        # Incrementa el valor de piezas avanzadas
+        for row in range(ROWS):
+            for col in range(COLS):
+                piece = self.board[row][col]
+                if piece != 0:
+                    if piece.color == WHITE:
+                        white_score += (row * 0.1)
+                    elif piece.color == RED:
+                        red_score += ((ROWS - row - 1) * 0.1)
         return white_score - red_score
 
     def get_all_pieces(self, color):
@@ -237,8 +248,7 @@ class Board:
 
         return moves
 
-
-def alpha_beta_pruning(board, depth, alpha, beta, max_player):
+def minimax(board, depth, alpha, beta, max_player):
     if depth == 0:
         return board.evaluate(), board
 
@@ -246,7 +256,7 @@ def alpha_beta_pruning(board, depth, alpha, beta, max_player):
         max_eval = float('-inf')
         best_move = None
         for move in get_all_moves(board, WHITE):
-            evaluation, _ = alpha_beta_pruning(move, depth - 1, alpha, beta, False)
+            evaluation, _ = minimax(move, depth - 1, alpha, beta, False)
             if evaluation > max_eval:
                 max_eval = evaluation
                 best_move = move
@@ -258,7 +268,7 @@ def alpha_beta_pruning(board, depth, alpha, beta, max_player):
         min_eval = float('inf')
         best_move = None
         for move in get_all_moves(board, RED):
-            evaluation, _ = alpha_beta_pruning(move, depth - 1, alpha, beta, True)
+            evaluation, _ = minimax(move, depth - 1, alpha, beta, True)
             if evaluation < min_eval:
                 min_eval = evaluation
                 best_move = move
@@ -266,7 +276,6 @@ def alpha_beta_pruning(board, depth, alpha, beta, max_player):
             if beta <= alpha:
                 break
         return min_eval, best_move
-
 
 def get_all_moves(board, color):
     moves = []
@@ -281,20 +290,18 @@ def get_all_moves(board, color):
             moves.append(temp_board)
     return moves
 
-
 def get_row_col_from_mouse(pos):
     x, y = pos
     row = y // SQUARE_SIZE
     col = x // SQUARE_SIZE
     return row, col
 
-
 def main():
     board = Board()
     run = True
     clock = pygame.time.Clock()
     selected_piece = None
-    player_turn = True
+    player_turn = True  # True para el jugador (rojo), False para IA (blanco)
 
     while run:
         clock.tick(60)
@@ -314,6 +321,7 @@ def main():
                             board.move(selected_piece, row, col)
                             if skip:
                                 board.remove(skip)
+                                # Verificar si hay otra captura disponible
                                 new_valid_moves = board.get_valid_moves(selected_piece)
                                 if any(new_valid_moves.values()):
                                     selected_piece = board.board[row][col]
@@ -327,8 +335,9 @@ def main():
                         if piece != 0 and piece.color == RED:
                             selected_piece = piece
 
+        # Movimiento de la IA usando Minimax con poda alfa-beta
         if not player_turn:
-            _, new_board = alpha_beta_pruning(board, 3, float('-inf'), float('inf'), True)
+            _, new_board = minimax(board, 3, float('-inf'), float('inf'), True)
             board = new_board
             player_turn = True
 
@@ -338,6 +347,4 @@ def main():
     pygame.quit()
     sys.exit()
 
-
-if __name__ == '__main__':
-    main()
+main()
