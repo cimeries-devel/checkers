@@ -255,23 +255,23 @@ def draw_message(win, message):
 
 
 def computer_move(board):
-    # # Definir la red bayesiana
-    # model = BayesianNetwork([('Heuristic', 'Move')])
-    #
-    # # Definir las CPDs
-    # cpd_heuristic = TabularCPD(variable='Heuristic', variable_card=2, values=[[0.5], [0.5]])
-    # cpd_move = TabularCPD(variable='Move', variable_card=2,
-    #                       values=[[0.8, 0.2], [0.2, 0.8]],
-    #                       evidence=['Heuristic'], evidence_card=[2])
-    #
-    # # Agregar las CPDs al modelo
-    # model.add_cpds(cpd_heuristic, cpd_move)
-    #
-    # # Verificar el modelo
-    # assert model.check_model()
-    #
-    # # Realizar inferencia
-    # inference = VariableElimination(model)
+    # Definir la red bayesiana
+    model = BayesianNetwork([('Heuristic', 'Move')])
+
+    # Definir las CPDs
+    cpd_heuristic = TabularCPD(variable='Heuristic', variable_card=2, values=[[0.5], [0.5]])
+    cpd_move = TabularCPD(variable='Move', variable_card=2,
+                          values=[[0.8, 0.2], [0.2, 0.8]],
+                          evidence=['Heuristic'], evidence_card=[2])
+
+    # Agregar las CPDs al modelo
+    model.add_cpds(cpd_heuristic, cpd_move)
+
+    # Verificar el modelo
+    assert model.check_model()
+
+    # Realizar inferencia
+    inference = VariableElimination(model)
 
     all_moves = board.get_all_moves(RED)
     if not all_moves:

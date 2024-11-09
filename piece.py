@@ -14,24 +14,19 @@ class Piece:
         self.y = 0
         self.calc_pos()
 
-    def initial_data(self, square_size, crown, grey):
-        self.square_size = square_size
-        self.crown = crown
-        self.grey = grey
-
     def calc_pos(self):
-        self.x = self.square_size * self.col + self.square_size // 2
-        self.y = self.square_size * self.row + self.square_size // 2
+        self.x = SQUARE_SIZE * self.col + SQUARE_SIZE // 2
+        self.y = SQUARE_SIZE * self.row + SQUARE_SIZE // 2
 
     def make_king(self):
         self.king = True
 
     def draw(self, win):
-        radius = self.square_size // 2 - self.PADDING
-        pygame.draw.circle(win, self.grey, (self.x, self.y), radius + self.OUTLINE)
+        radius = SQUARE_SIZE // 2 - self.PADDING
+        pygame.draw.circle(win, GREY, (self.x, self.y), radius + self.OUTLINE)
         pygame.draw.circle(win, self.color, (self.x, self.y), radius)
         if self.king:
-            win.blit(self.crown, (self.x - self.crown.get_width() // 2, self.y - self.crown.get_height() // 2))
+            win.blit(CROWN, (self.x - CROWN.get_width() // 2, self.y - CROWN.get_height() // 2))
 
     def move(self, row, col):
         self.row = row

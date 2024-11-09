@@ -1,22 +1,28 @@
 import pygame
 import sys
 import copy
+import networkx as nx
+import matplotlib.pyplot as plt
+from io import BytesIO
 
+# Configuración de la ventana y colores
 WIDTH, HEIGHT = 800, 800
 ROWS, COLS = 8, 8
 SQUARE_SIZE = WIDTH // COLS
 
+# Colores
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREY = (128, 128, 128)
 
+# Inicializar Pygame
 pygame.init()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Juego de Damas con IA")
 
+# Cargar imágenes
 CROWN = pygame.transform.scale(pygame.image.load("crown.png"), (44, 25))
-
 
 class Piece:
     PADDING = 15
@@ -27,8 +33,6 @@ class Piece:
         self.col = col
         self.color = color
         self.king = False
-        self.x = 0
-        self.y = 0
         self.calc_pos()
 
     def calc_pos(self):
@@ -49,7 +53,6 @@ class Piece:
         self.row = row
         self.col = col
         self.calc_pos()
-
 
 class Board:
     def __init__(self):
@@ -91,7 +94,6 @@ class Board:
     def move(self, piece, row, col):
         self.board[piece.row][piece.col], self.board[row][col] = self.board[row][col], self.board[piece.row][piece.col]
         piece.move(row, col)
-
         if (row == 0 and piece.color == RED) or (row == ROWS - 1 and piece.color == WHITE):
             piece.make_king()
 
@@ -104,18 +106,26 @@ class Board:
                 self.red_left -= 1
 
     def evaluate(self):
-        white_score = self.white_left + self.white_kings * 1.5
-        red_score = self.red_left + self.red_kings * 1.5
-
+        score = (self.white_left - self.red_left) + (self.white_kings - self.red_kings) * 1.8
         for row in range(ROWS):
             for col in range(COLS):
                 piece = self.board[row][col]
                 if piece != 0:
+                    position_score = 0.1 * row if piece.color == WHITE else 0.1 * (ROWS - row - 1)
                     if piece.color == WHITE:
-                        white_score += (row * 0.1)
+                        score += position_score
                     elif piece.color == RED:
-                        red_score += ((ROWS - row - 1) * 0.1)
-        return white_score - red_score
+                        score -= position_score
+                    if col == 0 or col == COLS - 1:
+                        score += 0.2 if piece.color == WHITE else -0.2
+        return score
+
+    def is_game_over(self):
+        if self.white_left <= 0 or self.red_left <= 0:
+            return True
+        white_moves = any(self.get_valid_moves(piece) for piece in self.get_all_pieces(WHITE))
+        red_moves = any(self.get_valid_moves(piece) for piece in self.get_all_pieces(RED))
+        return not white_moves or not red_moves
 
     def get_all_pieces(self, color):
         pieces = []
@@ -128,30 +138,26 @@ class Board:
     def get_valid_moves(self, piece):
         moves = {}
         if piece.king:
-            moves.update(self._traverse_diagonal(piece.row, piece.col, -1, -1, piece.color))  # Arriba a la izquierda
-            moves.update(self._traverse_diagonal(piece.row, piece.col, -1, 1, piece.color))   # Arriba a la derecha
-            moves.update(self._traverse_diagonal(piece.row, piece.col, 1, -1, piece.color))   # Abajo a la izquierda
-            moves.update(self._traverse_diagonal(piece.row, piece.col, 1, 1, piece.color))    # Abajo a la derecha
+            moves.update(self._traverse_diagonal(piece.row, piece.col, -1, -1, piece.color))
+            moves.update(self._traverse_diagonal(piece.row, piece.col, -1, 1, piece.color))
+            moves.update(self._traverse_diagonal(piece.row, piece.col, 1, -1, piece.color))
+            moves.update(self._traverse_diagonal(piece.row, piece.col, 1, 1, piece.color))
         else:
             left = piece.col - 1
             right = piece.col + 1
             row = piece.row
-
             if piece.color == WHITE or piece.king:
                 moves.update(self._traverse_left(row + 1, min(row + 3, ROWS), 1, piece.color, left))
                 moves.update(self._traverse_right(row + 1, min(row + 3, ROWS), 1, piece.color, right))
-
             if piece.color == RED or piece.king:
                 moves.update(self._traverse_left(row - 1, max(row - 3, -1), -1, piece.color, left))
                 moves.update(self._traverse_right(row - 1, max(row - 3, -1), -1, piece.color, right))
-
         return moves
 
     def _traverse_diagonal(self, start_row, start_col, row_step, col_step, color, skipped=[]):
         moves = {}
         last = []
         row, col = start_row + row_step, start_col + col_step
-
         while 0 <= row < ROWS and 0 <= col < COLS:
             current = self.board[row][col]
             if current == 0:
@@ -161,7 +167,6 @@ class Board:
                     moves[(row, col)] = last + skipped
                 else:
                     moves[(row, col)] = last
-
                 if last:
                     new_row = row + row_step
                     new_col = col + col_step
@@ -171,10 +176,8 @@ class Board:
                 break
             else:
                 last = [current]
-
             row += row_step
             col += col_step
-
         return moves
 
     def _traverse_left(self, start, stop, step, color, left, skipped=[]):
@@ -183,7 +186,6 @@ class Board:
         for r in range(start, stop, step):
             if left < 0:
                 break
-
             current = self.board[r][left]
             if current == 0:
                 if skipped and not last:
@@ -192,7 +194,6 @@ class Board:
                     moves[(r, left)] = last + skipped
                 else:
                     moves[(r, left)] = last
-
                 if last:
                     row = r + step
                     col = left - 1
@@ -204,9 +205,7 @@ class Board:
                 break
             else:
                 last = [current]
-
             left -= 1
-
         return moves
 
     def _traverse_right(self, start, stop, step, color, right, skipped=[]):
@@ -215,7 +214,6 @@ class Board:
         for r in range(start, stop, step):
             if right >= COLS:
                 break
-
             current = self.board[r][right]
             if current == 0:
                 if skipped and not last:
@@ -224,7 +222,6 @@ class Board:
                     moves[(r, right)] = last + skipped
                 else:
                     moves[(r, right)] = last
-
                 if last:
                     row = r + step
                     col = right - 1
@@ -236,41 +233,51 @@ class Board:
                 break
             else:
                 last = [current]
-
             right += 1
-
         return moves
 
 
-def minimax(board, depth, alpha, beta, max_player):
-    if depth == 0:
-        return board.evaluate(), board
+decision_graph = nx.DiGraph()
+
+
+def minimax(board, depth, alpha, beta, max_player, graph, node_id=0, transposition_table={}):
+    board_state = tuple([tuple(row) for row in board.board])
+    if board_state in transposition_table:
+        return transposition_table[board_state]
+
+    if depth == 0 or board.is_game_over():
+        score = board.evaluate()
+        transposition_table[board_state] = score
+        return score, board
 
     if max_player:
         max_eval = float('-inf')
         best_move = None
         for move in get_all_moves(board, WHITE):
-            evaluation, _ = minimax(move, depth - 1, alpha, beta, False)
+            evaluation, _ = minimax(move, depth - 1, alpha, beta, False, graph, node_id + 1, transposition_table)
+            graph.add_edge(node_id, node_id + 1, label=f"{evaluation:.2f}")
             if evaluation > max_eval:
                 max_eval = evaluation
                 best_move = move
             alpha = max(alpha, evaluation)
             if beta <= alpha:
                 break
+        transposition_table[board_state] = (max_eval, best_move)
         return max_eval, best_move
     else:
         min_eval = float('inf')
         best_move = None
         for move in get_all_moves(board, RED):
-            evaluation, _ = minimax(move, depth - 1, alpha, beta, True)
+            evaluation, _ = minimax(move, depth - 1, alpha, beta, True, graph, node_id + 1, transposition_table)
+            graph.add_edge(node_id, node_id + 1, label=f"{evaluation:.2f}")
             if evaluation < min_eval:
                 min_eval = evaluation
                 best_move = move
             beta = min(beta, evaluation)
             if beta <= alpha:
                 break
+        transposition_table[board_state] = (min_eval, best_move)
         return min_eval, best_move
-
 
 def get_all_moves(board, color):
     moves = []
@@ -285,13 +292,37 @@ def get_all_moves(board, color):
             moves.append(temp_board)
     return moves
 
+def display_decision_graph(graph):
+    pos = nx.spring_layout(graph)
+    labels = nx.get_edge_attributes(graph, "label")
+    plt.figure(figsize=(10, 10))
+    nx.draw(graph, pos, with_labels=True, node_size=500, node_color="skyblue", font_size=8, font_weight="bold")
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels)
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="PNG")
+    buffer.seek(0)
+    plt.close()
+
+    graph_image = pygame.image.load(buffer)
+    graph_image = pygame.transform.scale(graph_image, (WIDTH, HEIGHT))
+    WIN.blit(graph_image, (0, 0))
+    pygame.display.flip()
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                waiting = False
 
 def get_row_col_from_mouse(pos):
     x, y = pos
     row = y // SQUARE_SIZE
     col = x // SQUARE_SIZE
     return row, col
-
 
 def main():
     board = Board()
@@ -331,9 +362,13 @@ def main():
                         if piece != 0 and piece.color == RED:
                             selected_piece = piece
 
-        # Minimax con poda alfa-beta
+        if board.is_game_over():
+            display_decision_graph(decision_graph)
+            run = False
+            break
+
         if not player_turn:
-            _, new_board = minimax(board, 3, float('-inf'), float('inf'), True)
+            _, new_board = minimax(board, 4, float('-inf'), float('inf'), True, decision_graph)
             board = new_board
             player_turn = True
 
