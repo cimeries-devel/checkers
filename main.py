@@ -21,6 +21,7 @@ pygame.display.set_caption("Juego de Damas con IA")
 # Cargar imágenes
 CROWN = pygame.transform.scale(pygame.image.load("crown.png"), (44, 25))
 
+
 class Piece:
     PADDING = 15
     OUTLINE = 2
@@ -52,6 +53,7 @@ class Piece:
         self.row = row
         self.col = col
         self.calc_pos()
+
 
 class Board:
     def __init__(self):
@@ -91,11 +93,9 @@ class Board:
                     piece.draw(win)
 
     def move(self, piece, row, col):
-        # Mover la pieza a la nueva posición
         self.board[piece.row][piece.col], self.board[row][col] = self.board[row][col], self.board[piece.row][piece.col]
         piece.move(row, col)
 
-        # Promocionar a dama si llega al borde opuesto
         if (row == 0 and piece.color == RED) or (row == ROWS - 1 and piece.color == WHITE):
             piece.make_king()
 
@@ -237,6 +237,7 @@ class Board:
 
         return moves
 
+
 def alpha_beta_pruning(board, depth, alpha, beta, max_player):
     if depth == 0:
         return board.evaluate(), board
@@ -266,6 +267,7 @@ def alpha_beta_pruning(board, depth, alpha, beta, max_player):
                 break
         return min_eval, best_move
 
+
 def get_all_moves(board, color):
     moves = []
     for piece in board.get_all_pieces(color):
@@ -279,18 +281,20 @@ def get_all_moves(board, color):
             moves.append(temp_board)
     return moves
 
+
 def get_row_col_from_mouse(pos):
     x, y = pos
     row = y // SQUARE_SIZE
     col = x // SQUARE_SIZE
     return row, col
 
+
 def main():
     board = Board()
     run = True
     clock = pygame.time.Clock()
     selected_piece = None
-    player_turn = True  # True para el jugador (rojo), False para IA (blanco)
+    player_turn = True
 
     while run:
         clock.tick(60)
@@ -309,11 +313,10 @@ def main():
                             skip = valid_moves[(row, col)]
                             board.move(selected_piece, row, col)
                             if skip:
-                                board.remove(skip)  # Elimina la pieza capturada
-                                # Verificar si hay otra captura disponible
+                                board.remove(skip)
                                 new_valid_moves = board.get_valid_moves(selected_piece)
                                 if any(new_valid_moves.values()):
-                                    selected_piece = board.board[row][col]  # Mantener la pieza seleccionada para múltiples capturas
+                                    selected_piece = board.board[row][col]
                                     continue
                             player_turn = False
                             selected_piece = None
@@ -324,7 +327,6 @@ def main():
                         if piece != 0 and piece.color == RED:
                             selected_piece = piece
 
-        # Movimiento de la IA usando Alpha-Beta pruning
         if not player_turn:
             _, new_board = alpha_beta_pruning(board, 3, float('-inf'), float('inf'), True)
             board = new_board
