@@ -4,6 +4,7 @@ import copy
 import networkx as nx
 import matplotlib.pyplot as plt
 from io import BytesIO
+# Comentario nuevo
 
 # Configuración de la ventana y colores
 WIDTH, HEIGHT = 800, 800
