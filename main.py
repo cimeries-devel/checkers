@@ -2,24 +2,21 @@ import pygame
 import sys
 import copy
 
-# Configuración de la ventana y colores
 WIDTH, HEIGHT = 800, 800
 ROWS, COLS = 8, 8
 SQUARE_SIZE = WIDTH // COLS
 
-# Colores
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREY = (128, 128, 128)
 
-# Inicializar Pygame
 pygame.init()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Juego de Damas con IA")
 
-# Cargar imágenes
 CROWN = pygame.transform.scale(pygame.image.load("crown.png"), (44, 25))
+
 
 class Piece:
     PADDING = 15
@@ -52,6 +49,7 @@ class Piece:
         self.row = row
         self.col = col
         self.calc_pos()
+
 
 class Board:
     def __init__(self):
@@ -91,11 +89,9 @@ class Board:
                     piece.draw(win)
 
     def move(self, piece, row, col):
-        # Mover la pieza a la nueva posición
         self.board[piece.row][piece.col], self.board[row][col] = self.board[row][col], self.board[piece.row][piece.col]
         piece.move(row, col)
 
-        # Promocionar a dama si llega al borde opuesto
         if (row == 0 and piece.color == RED) or (row == ROWS - 1 and piece.color == WHITE):
             piece.make_king()
 
@@ -108,11 +104,9 @@ class Board:
                 self.red_left -= 1
 
     def evaluate(self):
-        # Función de evaluación que da más valor a las damas y piezas avanzadas
         white_score = self.white_left + self.white_kings * 1.5
         red_score = self.red_left + self.red_kings * 1.5
 
-        # Incrementa el valor de piezas avanzadas
         for row in range(ROWS):
             for col in range(COLS):
                 piece = self.board[row][col]
@@ -134,7 +128,6 @@ class Board:
     def get_valid_moves(self, piece):
         moves = {}
         if piece.king:
-            # Si es una reina, puede capturar en toda la diagonal
             moves.update(self._traverse_diagonal(piece.row, piece.col, -1, -1, piece.color))  # Arriba a la izquierda
             moves.update(self._traverse_diagonal(piece.row, piece.col, -1, 1, piece.color))   # Arriba a la derecha
             moves.update(self._traverse_diagonal(piece.row, piece.col, 1, -1, piece.color))   # Abajo a la izquierda
@@ -248,6 +241,7 @@ class Board:
 
         return moves
 
+
 def minimax(board, depth, alpha, beta, max_player):
     if depth == 0:
         return board.evaluate(), board
@@ -277,6 +271,7 @@ def minimax(board, depth, alpha, beta, max_player):
                 break
         return min_eval, best_move
 
+
 def get_all_moves(board, color):
     moves = []
     for piece in board.get_all_pieces(color):
@@ -290,18 +285,20 @@ def get_all_moves(board, color):
             moves.append(temp_board)
     return moves
 
+
 def get_row_col_from_mouse(pos):
     x, y = pos
     row = y // SQUARE_SIZE
     col = x // SQUARE_SIZE
     return row, col
 
+
 def main():
     board = Board()
     run = True
     clock = pygame.time.Clock()
     selected_piece = None
-    player_turn = True  # True para el jugador (rojo), False para IA (blanco)
+    player_turn = True
 
     while run:
         clock.tick(60)
@@ -321,7 +318,6 @@ def main():
                             board.move(selected_piece, row, col)
                             if skip:
                                 board.remove(skip)
-                                # Verificar si hay otra captura disponible
                                 new_valid_moves = board.get_valid_moves(selected_piece)
                                 if any(new_valid_moves.values()):
                                     selected_piece = board.board[row][col]
@@ -335,7 +331,7 @@ def main():
                         if piece != 0 and piece.color == RED:
                             selected_piece = piece
 
-        # Movimiento de la IA usando Minimax con poda alfa-beta
+        # Minimax con poda alfa-beta
         if not player_turn:
             _, new_board = minimax(board, 3, float('-inf'), float('inf'), True)
             board = new_board
