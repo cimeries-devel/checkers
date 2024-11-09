@@ -1,0 +1,88 @@
+Euristica
+1. Conteo de Piezas
+Valor básico: Otorgar un valor a cada pieza según su tipo:
+Peón (pieza básica): 1 punto.
+Dama (rey): 1.5 a 2 puntos, ya que las damas tienen más libertad de movimiento y capacidad de captura.
+Ejemplo:
+score = (número de piezas de la IA) - (número de piezas del oponente)
+
+2. Posición de las Piezas en el Tablero
+
+Piezas avanzadas: Aumenta ligeramente el valor de una pieza si está en una posición avanzada (más cerca del borde del oponente) porque suele estar en posición ofensiva y más próxima a ser promovida a dama.
+Posición estratégica: Las piezas en las columnas centrales pueden tener más movilidad y ser menos vulnerables, por lo que podrían valer ligeramente más.
+Ejemplo:
+
+for row in range(ROWS):
+    for col in range(COLS):
+        piece = board[row][col]
+        if piece.color == WHITE:
+            score += row * 0.1
+            elif piece.color == RED:
+            score += (ROWS - row - 1) * 0.1
+
+3. Movilidad y Posibilidades de Captura
+
+Movilidad: La cantidad de movimientos válidos que tiene cada jugador. Un jugador con más opciones de movimiento tiene más control sobre el juego, especialmente si puede evitar quedar en una posición sin movimiento.
+Posibilidad de captura: Si una pieza tiene la oportunidad de capturar otra, otorga un pequeño bono, ya que esta jugada implica una ventaja en el siguiente turno.
+
+Para calcular esto:
+
+Movilidad: Contar las posibles jugadas disponibles para la IA y el oponente.
+Captura: Contar las jugadas que resultan en una captura.
+Ejemplo:
+
+mobility_score = len(valid_moves_IA) - len(valid_moves_opponent)
+capture_score = len(capturable_pieces_IA) - len(capturable_pieces_opponent)
+
+4. Protección de Piezas
+
+Protección: Evalúa si las piezas están protegidas o no. Las piezas en los bordes o que están detrás de otras piezas del mismo color suelen estar menos expuestas a capturas.
+Ejemplo:
+
+for piece in all_pieces:
+if piece está protegida:
+score += 0.2
+
+5. Condiciones de Victoria y Derrota
+
+Victoria: Un valor muy alto si la IA detecta que ha ganado el juego (todas las piezas del oponente fueron capturadas o el oponente no tiene movimientos legales).
+Derrota: Un valor muy bajo si la IA detecta que ha perdido el juego.
+
+Función de Evaluación Combinada
+
+Aquí tienes cómo podría implementarse una función de evaluación que combine estos factores:
+
+def evaluate(board):
+score = 0
+
+# 1. Conteo de Piezas y Puntuación de las Damas
+score += (board.white_left - board.red_left) * 1  # Valor base para las piezas
+score += (board.white_kings - board.red_kings) * 1.5  # Valor adicional para damas
+
+# 2. Posición en el Tablero (piezas avanzadas valen más)
+for row in range(ROWS):
+    for col in range(COLS):
+        piece = board[row][col]
+        if piece != 0:
+            if piece.color == WHITE:
+                score += row * 0.1  # Las piezas blancas más avanzadas ganan valor
+                elif piece.color == RED:
+                score += (ROWS - row - 1) * 0.1  # Las piezas rojas más avanzadas ganan valor
+
+                # 3. Movilidad y Captura
+                white_moves = board.get_all_moves(WHITE)
+                red_moves = board.get_all_moves(RED)
+                score += len(white_moves) * 0.1  # Movilidad para IA
+                score -= len(red_moves) * 0.1  # Movilidad del oponente reduce el puntaje
+
+                # Captura disponible
+                white_captures = sum(1 for move in white_moves if is_capture(move))
+                red_captures = sum(1 for move in red_moves if is_capture(move))
+                score += white_captures * 0.3  # Bonificación de captura para la IA
+                score -= red_captures * 0.3  # Penalización si el oponente tiene capturas
+
+                # 4. Protección de Piezas
+                score += board.get_protected_score(WHITE)
+                score -= board.get_protected_score(RED)
+
+                return score
