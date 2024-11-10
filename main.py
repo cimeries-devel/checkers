@@ -4,7 +4,6 @@ import copy
 import networkx as nx
 import matplotlib.pyplot as plt
 from io import BytesIO
-# Comentario nuevo
 
 # Configuración de la ventana y colores
 WIDTH, HEIGHT = 800, 800
@@ -237,12 +236,11 @@ class Board:
             right += 1
         return moves
 
-
 decision_graph = nx.DiGraph()
-
 
 def minimax(board, depth, alpha, beta, max_player, graph, node_id=0, transposition_table={}):
     board_state = tuple([tuple(row) for row in board.board])
+    print(depth, alpha, beta, graph)
     if board_state in transposition_table:
         return transposition_table[board_state]
 
